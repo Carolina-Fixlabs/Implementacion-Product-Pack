@@ -1,0 +1,26 @@
+{
+  "name": "Product-pack-option",
+  "icon": "fa-gear",
+  "max_usage": null,
+  "required": false,
+  "tag": "div",
+  "classes": "",
+  "templates_in": [
+    "home",
+    "product",
+    "category",
+    "page",
+    "searchresults",
+    "contactpage",
+    "error"
+  ],
+  "options": {
+    "title": {
+      "name": "Title",
+      "type": "input",
+      "default": ""
+    }
+  },
+  "mode": "subcomponents",
+  "properties": {}
+}

@@ -1,0 +1,369 @@
+{% assign donuts_category = categories | where: "name", "Donuts" | first %}
+{% assign pack_product = product %}
+ {% if donuts_category.products.size > 0 %}
+  <form id="donutsForm" action="{{ cart_add_url }}" method="post">
+    <span>Elige tus 12 donuts favoritas</span>
+    <div class="product-options__fieldset">
+      <div class="product-options__title">Donuts Seleccionadas <span id="donutCount">(0/12)</span></div>
+      <div class="donuts-container">
+       {% for donut in donuts_category.products %}
+  {% assign label_id = "donut_" | append: donut.id %}
+  <div class="donut-item">
+    <img 
+      src="{{ donut.image | image_url: 'medium' }}" 
+      alt="{{ donut.name }}" 
+      data-product-id="{{ donut.id }}"
+      data-product-name="{{ donut.name }}"
+      class="donut-image {% if donut.available == false or donut.stock <= 0 %}grayscale{% endif %}"
+      title="{{ donut.name }}"
+    >
+  </div>
+{% endfor %}
+
+        {%endif%}
+      </div>
+    </div>
+
+    <div id="donutPreview" class="donut-preview">
+        <div id="previewImages" class="preview-images"></div>
+      </div>
+    <div class="preview-and-selection-container">
+      <div id="selectedDonutsOverlay" class="selected-donuts-overlay">
+        <div id="selectedDonutsList" class="selected-donuts-list"></div>
+      </div>
+    </div>
+    <div id="errorMessage" style="color: red; display: none;">Has seleccionado más de 12 donuts. Por favor, ajusta tu selección.</div>
+    <input type="hidden" name="id" value="{{ pack_product.id }}">
+    {% for option in pack_product.options %}
+      {% if option.name == "Tipo de Dona" %}
+        <input type="hidden" name="{{ option.id }}" id="selectedDonutsInput">
+      {% endif %}
+    {% endfor %}
+  </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('donutsForm');
+  const donutImages = document.querySelectorAll('.donut-image');
+  const donutCount = document.getElementById('donutCount');
+  const errorMessage = document.getElementById('errorMessage');
+  const selectedDonutsInput = document.getElementById('selectedDonutsInput');
+  const selectedDonutsList = document.getElementById('selectedDonutsList');
+  const selectedDonutsOverlay = document.getElementById('selectedDonutsOverlay');
+  const previewImages = document.getElementById('previewImages');
+
+  let selectedDonuts = new Map();
+  let totalDonuts = 0;
+
+  function updatePreviewImages() {
+    previewImages.innerHTML = '';
+    let previewCount = 0;
+    selectedDonuts.forEach((count, donut) => {
+      for (let i = 0; i < count && previewCount < 12; i++) {
+        const img = document.createElement('img');
+        img.src = donut.image;
+        img.alt = donut.name;
+        img.className = 'preview-donut-image';
+        img.title = donut.name;
+        previewImages.appendChild(img);
+        previewCount++;
+      }
+    });
+  }
+
+  function updateDonutCount() {
+    donutCount.textContent = `(${totalDonuts}/12)`;
+    selectedDonutsInput.value = Array.from(selectedDonuts.entries())
+      .map(([donut, count]) => `${donut.name} x${count}`)
+      .join(', ');
+
+    selectedDonutsList.innerHTML = '';
+    selectedDonuts.forEach((count, donut) => {
+      const donutRow = document.createElement('div');
+      donutRow.className = 'selected-donut-row';
+      
+      donutRow.innerHTML = `
+        <img src="${donut.image}" alt="${donut.name}" class="selected-donut-image">
+        <span class="selected-donut-name">${donut.name}</span>
+        <div class="donut-counter">
+          <button type="button" class="counter-btn decrease" data-id="${donut.id}">-</button>
+          <span class="count">${count}</span>
+          <button type="button" class="counter-btn increase" data-id="${donut.id}">+</button>
+        </div>
+      `;
+      
+      selectedDonutsList.appendChild(donutRow);
+    });
+
+    selectedDonutsOverlay.style.display = selectedDonuts.size > 0 ? 'block' : 'none';
+    updatePreviewImages();
+  }
+
+  function updateDonutQuantity(donut, increment) {
+    const currentCount = selectedDonuts.get(donut) || 0;
+    const newCount = currentCount + increment;
+    
+    if (newCount <= 0) {
+      selectedDonuts.delete(donut);
+      totalDonuts -= currentCount;
+    } else if (totalDonuts - currentCount + newCount <= 12) {
+      selectedDonuts.set(donut, newCount);
+      totalDonuts = totalDonuts - currentCount + newCount;
+    } else {
+      alert('Ya has seleccionado 12 donas en total. No puedes agregar más.');
+      return;
+    }
+    
+    updateDonutCount();
+  }
+
+  donutImages.forEach(img => {
+    img.addEventListener('click', function() {
+      const donutName = this.dataset.productName;
+      const donutId = this.dataset.productId;
+      const donutImage = this.src;
+      const donut = { name: donutName, id: donutId, image: donutImage };
+
+      if (totalDonuts < 12) {
+        updateDonutQuantity(donut, 1);
+      } else if (!selectedDonuts.has(donut)) {
+        alert('Ya has seleccionado 12 donas. No puedes agregar más.');
+      }
+    });
+  });
+
+  selectedDonutsList.addEventListener('click', function(e) {
+    if (e.target.classList.contains('counter-btn')) {
+      const donutId = e.target.dataset.id;
+      const increment = e.target.classList.contains('increase') ? 1 : -1;
+      
+      const donut = Array.from(selectedDonuts.keys()).find(d => d.id === donutId);
+      if (donut) {
+        updateDonutQuantity(donut, increment);
+      }
+    }
+  });
+
+  form.addEventListener('submit', function(event) {
+    if (totalDonuts === 0 || totalDonuts > 12) {
+      event.preventDefault();
+      alert('Por favor, selecciona entre 1 y 12 donuts.');
+    }
+  });
+});
+</script>
+
+<style>
+  .grayscale {
+  filter: grayscale(100%);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+  .preview-and-selection-container {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+  }
+
+  .donut-preview {
+   position: fixed;
+   top: 50px;
+   right: 20px;
+   z-index: 1000;
+   border-radius: 10px;
+   max-width: 70%;
+   max-height: 80vh;
+   overflow-y: auto;
+   background-color: #412A13;
+   transform: translateX(-180%);
+   transition: transform 0.3s ease;
+
+  }
+
+  .preview-images {
+   display: grid;
+   grid-template-columns: repeat(4, 1fr);
+   gap: 10px;
+
+
+  }
+
+  .preview-donut-image {
+   width: 100%;
+   height: 100px;
+   object-fit: cover;
+   border-radius: 10px;
+
+  }
+
+  .donuts-container {
+    display: grid;
+    grid-template-columns: repeat(6, 70px);
+    gap: 10px;
+  }
+
+  .donut-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .donut-image {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    transition: border-color 0.3s;
+  }
+
+  .donut-image:hover {
+    border-color: #ff69b4;
+  }
+
+  .selected-donuts-overlay {
+    flex: 1;
+    border-radius: 10px;
+    max-width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .selected-donuts-list {
+    padding: 15px;
+  }
+
+  .selected-donut-row {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background: white;
+    margin-bottom: 10px;
+    border-radius: 8px;
+  }
+
+  .selected-donut-name {
+    flex: 1;
+    margin: 0 10px;
+    font-size: 14px;
+  }
+
+  .donut-counter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .counter-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: #ff69b4;
+    color: white;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .counter-btn:hover {
+    background: #ff1493;
+  }
+
+  .count {
+    min-width: 20px;
+    text-align: center;
+    font-weight: bold;
+  }
+
+  .selected-donut-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  @media (max-width: 1024px) {
+    .preview-and-selection-container {
+      flex-direction: column;
+    }
+
+    .donut-preview {
+     top: 60px;
+     max-width: 80%;
+     transform: translateX(-150%);
+
+    }
+    .preview-images {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .selected-donuts-overlay {
+      max-width: 100%;
+    }
+
+    .donuts-container {
+      grid-template-columns: repeat(6, 70px);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .donut-preview {
+      top: 85px;
+     right: 10px;
+     max-width: 90%;
+     max-height: 80vh;
+     transform: translate(0, 0);
+
+    }
+     .preview-donut-image{
+      height: 85px;
+    }
+    .donuts-container {
+      grid-template-columns: repeat(5, 70px);
+    }
+
+    .selected-donut-row {
+      padding: 8px;
+    }
+
+    .selected-donut-name {
+      font-size: 12px;
+    }
+
+    .counter-btn {
+      width: 20px;
+      height: 20px;
+      font-size: 14px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .donuts-container {
+      grid-template-columns: repeat(4, 70px);
+    }
+    .donut-preview {
+     top: 90px;
+     max-width: 95%;
+     max-height: 75vh;
+    }
+    .preview-images{
+    grid-template-columns: repeat(5, 70px);
+    }
+    .preview-donut-image{
+      height: 75px;
+    }
+  }
+</style>
+
+
+
+
+
+
