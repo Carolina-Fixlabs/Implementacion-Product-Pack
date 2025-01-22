@@ -1,45 +1,49 @@
 {% assign donuts_category = categories | where: "name", "Donuts" | first %}
 {% assign pack_product = product %}
- {% if donuts_category.products.size > 0 %}
+{% if donuts_category.products.size > 0 %}
   <form id="donutsForm" action="{{ cart_add_url }}" method="post">
     <span>Elige tus 12 donuts favoritas</span>
     <div class="product-options__fieldset">
       <div class="product-options__title">Donuts Seleccionadas <span id="donutCount">(0/12)</span></div>
       <div class="donuts-container">
-       {% for donut in donuts_category.products %}
-  {% assign label_id = "donut_" | append: donut.id %}
-  <div class="donut-item">
-    <img 
-      src="{{ donut.image | image_url: 'medium' }}" 
-      alt="{{ donut.name }}" 
-      data-product-id="{{ donut.id }}"
-      data-product-name="{{ donut.name }}"
-      class="donut-image {% if donut.available == false or donut.stock <= 0 %}grayscale{% endif %}"
-      title="{{ donut.name }}"
-    >
-  </div>
-{% endfor %}
-
-        {%endif%}
+        {% for donut in donuts_category.products %}
+          {% assign label_id = "donut_" | append: donut.id %}
+          <div class="donut-item">
+            <img 
+              src="{{ donut.image | image_url: 'medium' }}" 
+              alt="{{ donut.name }}" 
+              data-product-id="{{ donut.id }}"
+              data-product-name="{{ donut.name }}"
+              class="donut-image {% if donut.available == false or donut.stock <= 0 %}grayscale{% endif %}"
+              title="{{ donut.name }}"
+            >
+          </div>
+        {% endfor %}
       </div>
     </div>
-
     <div id="donutPreview" class="donut-preview">
-        <div id="previewImages" class="preview-images"></div>
-      </div>
+      <div id="previewImages" class="preview-images"></div>
+    </div>
     <div class="preview-and-selection-container">
       <div id="selectedDonutsOverlay" class="selected-donuts-overlay">
         <div id="selectedDonutsList" class="selected-donuts-list"></div>
       </div>
     </div>
     <div id="errorMessage" style="color: red; display: none;">Has seleccionado más de 12 donuts. Por favor, ajusta tu selección.</div>
-    <input type="hidden" name="id" value="{{ pack_product.id }}">
     {% for option in pack_product.options %}
-      {% if option.name == "Tipo de Dona" %}
-        <input type="hidden" name="{{ option.id }}" id="selectedDonutsInput">
+      {% if option.type == "Text Field" %}
+        <input 
+          type="text" 
+          class="text prod-options" 
+          id="c3efbf7e55caf262" 
+          name="1511071" 
+          data-optionid="1511071"
+          value=""
+        >
       {% endif %}
     {% endfor %}
   </form>
+{% endif %}
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -47,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const donutImages = document.querySelectorAll('.donut-image');
   const donutCount = document.getElementById('donutCount');
   const errorMessage = document.getElementById('errorMessage');
-  const selectedDonutsInput = document.getElementById('selectedDonutsInput');
+  const selectedDonutsInput = document.getElementById('c3efbf7e55caf262');
   const selectedDonutsList = document.getElementById('selectedDonutsList');
   const selectedDonutsOverlay = document.getElementById('selectedDonutsOverlay');
   const previewImages = document.getElementById('previewImages');
@@ -152,6 +156,8 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
+
+
 
 <style>
   .grayscale {
@@ -361,9 +367,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 </style>
-
-
-
-
-
-
