@@ -21,6 +21,7 @@
         {% endfor %}
       </div>
     </div>
+
     <div id="donutPreview" class="donut-preview">
       <div id="previewImages" class="preview-images"></div>
     </div>
@@ -30,6 +31,7 @@
       </div>
     </div>
     <div id="errorMessage" style="color: red; display: none;">Has seleccionado más de 12 donuts. Por favor, ajusta tu selección.</div>
+    
     {% for option in pack_product.options %}
       {% if option.type == "Text Field" %}
         <input 
@@ -42,6 +44,7 @@
         >
       {% endif %}
     {% endfor %}
+    <div id="errorMessageContainer" style="color: red; margin-top: 10px;"></div>
   </form>
 {% endif %}
 
@@ -101,6 +104,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     selectedDonutsOverlay.style.display = selectedDonuts.size > 0 ? 'block' : 'none';
     updatePreviewImages();
+    const errorMessageContainer = document.getElementById('errorMessageContainer');
+    if (totalDonuts < 12) {
+      errorMessageContainer.textContent = `Por favor, selecciona ${12 - totalDonuts} donut${totalDonuts === 11 ? '' : 's'} más.`;
+    } else if (totalDonuts > 12) {
+      errorMessageContainer.textContent = `Has seleccionado ${totalDonuts - 12} donut${totalDonuts === 13 ? '' : 's'} de más. Por favor, ajusta tu selección.`;
+    } else {
+      errorMessageContainer.textContent = '';
+    }
   }
 
   function updateDonutQuantity(donut, increment) {
@@ -149,17 +160,25 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   form.addEventListener('submit', function(event) {
-    if (totalDonuts === 0 || totalDonuts > 12) {
-      event.preventDefault();
-      alert('Por favor, selecciona entre 1 y 12 donuts.');
-    }
-  });
+  if (totalDonuts < 12) {
+    event.preventDefault();
+    alert('Por favor, selecciona 12 donuts antes de continuar.');
+  } else if (totalDonuts > 12) {
+    event.preventDefault();
+    alert('Has seleccionado más de 12 donuts. Por favor, ajusta tu selección.');
+  }
+});
 });
 </script>
 
 
 
+
+
 <style>
+  .donut-not-available{
+    display:none;
+  }
   .grayscale {
   filter: grayscale(100%);
   opacity: 0.5;
@@ -294,6 +313,14 @@ document.addEventListener('DOMContentLoaded', function() {
     border-radius: 50%;
     object-fit: cover;
   }
+  @media only screen and (-webkit-min-device-pixel-ratio: 2) {
+    .donut-preview {
+
+   transform: translateX(-215%);
+
+
+  }
+}
 
   @media (max-width: 1024px) {
     .preview-and-selection-container {
